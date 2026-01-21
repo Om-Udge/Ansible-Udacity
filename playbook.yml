@@ -1,0 +1,63 @@
+
+-name: configure web servers with Ansible AWS
+hosts: web-servers
+become: yes
+vars:
+  port: 
+    - 80
+    - 443
+  webserver: nginx
+  app_root: html_demo_site-main
+  server_name: "{{ ansible_default_ipv4.address }}"
+  document_root: /var/www/html"
+
+
+
+tasks:
+  - name: Install firewalld
+    package:
+      name: "firewalld"
+      state: present
+
+  - name: Start firewalld and enabled
+    service:
+      name: firewalld
+      state: started
+      enabled: true
+
+  - name: Open port 
+    firewalld:
+      port: "{{ item }}/tcp"
+      state: enabled
+      permanent: true
+      immediate: true
+    loop: "{{ port }}"
+
+  - name : Check if companyplus directory exists
+    block:
+      - name: Check directory existence
+        stat:
+          path: /var/www/html/www.companyplus.com
+        register: dir_check
+    
+  - name: Directory exists
+    debug:
+          msg: "Directory /var/www/html/www.companyplus.com exists"
+    when: dir_check.stat.exists
+  - name: Directory does not exist
+    debug:
+          msg: "ERROR: Directory /var/www/html/www.companyplus.com does not exist"
+    when: not dir_check.stat.exists
+
+roles:
+    - role: webserver
+      vars:
+        app_root: html_demo_site-main
+        server_name: "{{ ansible_default_ipv4.address }}"
+        document_root: /var/www/html
+
+
+
+
+    
+
